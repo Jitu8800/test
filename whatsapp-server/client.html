@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>WhatsApp QR (WebSocket)</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 24px; max-width: 520px; margin: auto; }
+    h1 { font-size: 20px; }
+    #qr { width: 320px; height: 320px; border: 1px solid #ddd; display:block; margin-bottom:10px; object-fit:contain; }
+    #status { margin-top: 8px; font-weight: bold; }
+    #log { margin-top: 12px; font-size: 13px; color: #555; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>WhatsApp Link QR (via WebSocket)</h1>
+  <img id="qr" src="" alt="QR will appear here" />
+  <div id="status">Status: <span id="statustxt">disconnected</span></div>
+  <div id="log"></div>
+
+  <script>
+    // Adjust ws URL if server runs remotely or diff port
+    const WS_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') 
+      ? 'http://localhost:8080' 
+      : `ws://${location.hostname}:8080`;
+
+    const ws = new WebSocket(WS_URL);
+    const qrImg = document.getElementById('qr');
+    const statusSpan = document.getElementById('statustxt');
+    const log = document.getElementById('log');
+
+    function appendLog(s) {
+      log.textContent = `${new Date().toLocaleTimeString()} - ${s}\n` + log.textContent;
+    }
+
+    ws.addEventListener('open', () => {
+      statusSpan.textContent = 'connected to websocket';
+      appendLog('Connected to WebSocket server');
+    });
+
+    ws.addEventListener('message', (ev) => {
+      try {
+        const msg = JSON.parse(ev.data);
+        if (msg.type === 'qr') {
+          qrImg.src = msg.data;
+          statusSpan.textContent = 'scan the QR with WhatsApp mobile (WhatsApp → Menu → Linked devices → Link a device)';
+          appendLog('Received QR image');
+        } else if (msg.type === 'status') {
+          statusSpan.textContent = msg.data;
+          appendLog('Status: ' + msg.data);
+          if (msg.data === 'ready' || msg.data === 'authenticated') {
+            // optionally hide QR
+            // qrImg.src = '';
+          }
+        } else {
+          appendLog('Unknown message type: ' + msg.type);
+        }
+      } catch (e) {
+        appendLog('Invalid JSON: ' + e);
+      }
+    });
+
+    ws.addEventListener('close', () => {
+      statusSpan.textContent = 'websocket closed';
+      appendLog('WebSocket closed');
+    });
+
+    ws.addEventListener('error', (e) => {
+      appendLog('WebSocket error: ' + e);
+    });
+  </script>
+</body>
+</html>

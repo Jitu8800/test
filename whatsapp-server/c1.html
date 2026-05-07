@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WhatsApp WebSocket Bot Dashboard</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      background: #f4f6fa;
+      color: #222;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    h2 { text-align: center; }
+    label { font-weight: bold; margin-top: 10px; display: block; }
+    input, textarea, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.3s;
+    }
+    button:hover { background: #0056b3; }
+    img#qr {
+      display: block;
+      margin: 20px auto;
+      width: 250px;
+      height: 250px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      object-fit: contain;
+    }
+    #status { text-align: center; margin: 10px 0; font-weight: 600; color: #333; }
+    #log {
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 10px;
+      border-radius: 6px;
+      height: 150px;
+      overflow-y: auto;
+      font-size: 13px;
+      white-space: pre-wrap;
+    }
+    .section {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+      button.disconnect {
+    background-color: #dc3545;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  button.disconnect:hover {
+    background-color: #b52a37;
+  }
+  </style>
+</head>
+<body>
+  <h2>WhatsApp Bot</h2>
+  <img id="qr" src="" alt="QR Code">
+  <div id="status">Connecting...</div>
+ <button id="btnDisconnect" class="disconnect">🔌 Disconnect</button>
+
+  <div class="section">
+    <label>Send Message</label>
+    <input id="sendNumber" placeholder="e.g. 919876543210@c.us">
+    <textarea id="sendMessage" placeholder="Type your message..."></textarea>
+    <button onclick="sendMessage()">Send</button>
+  </div>
+ 
+
+  <div id="log"></div>
+
+  <script>
+    const ws = new WebSocket('http://localhost:8080');
+    const qrImg = document.getElementById('qr');
+    const statusDiv = document.getElementById('status');
+    const logDiv = document.getElementById('log');
+
+    function log(msg) {
+      const time = new Date().toLocaleTimeString();
+      logDiv.textContent = `[${time}] ${msg}\n` + logDiv.textContent;
+    }
+
+    ws.onopen = () => {
+      statusDiv.textContent = "✅ Connected to WebSocket server";
+      log("Connected to WebSocket server");
+    };
+
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      if (msg.type === 'qr') {
+        qrImg.src = msg.data;
+        statusDiv.textContent = "Scan QR with WhatsApp → Linked Devices";
+        log("Received new QR");
+      } else if (msg.type === 'status') {
+        statusDiv.textContent = "Status: " + msg.data;
+        log("Status: " + msg.data);
+      } else if (msg.type === 'info') {
+        log("ℹ️ " + msg.data);
+      } else if (msg.type === 'error') {
+        log("❌ Error: " + msg.data);
+      } else {
+        log("Unknown: " + event.data);
+      }
+    };
+
+    ws.onclose = () => {
+      statusDiv.textContent = "❌ WebSocket Disconnected";
+      log("WebSocket closed");
+    };
+
+    function sendMessage() {
+      const to = document.getElementById('sendNumber').value.trim();
+      const msg = document.getElementById('sendMessage').value.trim();
+      if (!to || !msg) return alert("Please enter number and message");
+      ws.send(JSON.stringify({ action: "send", to, msg }));
+      log(`Sent message → ${to}: ${msg}`);
+    }
+
+    function scheduleMessage() {
+      const to = document.getElementById('schedNumber').value.trim();
+      const msg = document.getElementById('schedMsg').value.trim();
+      const time = document.getElementById('schedTime').value;
+      if (!to || !msg || !time) return alert("Please fill all fields");
+      ws.send(JSON.stringify({ action: "schedule", to, msg, time }));
+      log(`Scheduled message → ${to} at ${time}`);
+    }
+
+    function broadcast() {
+      const contacts = document.getElementById('broadcastContacts').value.split(',').map(c => c.trim()).filter(Boolean);
+      const msg = document.getElementById('broadcastMsg').value.trim();
+      if (!contacts.length || !msg) return alert("Please enter contacts and message");
+      ws.send(JSON.stringify({ action: "broadcast", contacts, msg }));
+      log(`Broadcast initiated to ${contacts.length} contacts`);
+    }
+
+    document.getElementById("btnDisconnect").onclick = () => {
+  if (confirm("Are you sure you want to log out WhatsApp?")) {
+    ws.send(JSON.stringify({ action: "disconnect" }));
+  }
+};
+
+  </script>
+</body>
+</html>

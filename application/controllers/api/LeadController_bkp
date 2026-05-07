@@ -1,0 +1,406 @@
+<?php
+
+use app\services\imap\Imap;
+use app\services\LeadProfileBadges;
+use app\services\leads\LeadsKanban;
+use app\services\imap\ConnectionErrorException;
+use Ddeboer\Imap\Exception\MailboxDoesNotExistException;
+
+header('Content-Type: text/html; charset=utf-8');
+defined('BASEPATH') or exit('No direct script access allowed');
+
+class LeadController extends CI_Controller
+{
+    public function __construct()
+    {
+        parent::__construct();
+        $this->load->model('leads_model');
+    }
+
+    /* List all leads */
+
+
+    public function table()
+    {
+        if (!is_staff_member()) {
+            ajax_access_denied();
+        }
+        $this->app->get_table_data('leads');
+    }
+
+    public function kanban()
+    {
+        if (!is_staff_member()) {
+            ajax_access_denied();
+        }
+
+        $data['statuses']      = $this->leads_model->get_status();
+        $data['base_currency'] = get_base_currency();
+        $data['summary']       = get_leads_summary();
+
+        echo $this->load->view('admin/leads/kan-ban', $data, true);
+    }
+
+    /* Add or update lead */
+    public function leadgGenerate()
+    {
+        if ($this->input->post() && $this->input->post('token') == '7d68e2c38dfb38785e7a') 
+        {
+            $dataArr['status']              = 2; 
+            $dataArr['source']              = 3; 
+            $dataArr['assigned']            = 1; 
+            $dataArr['name']                = $this->input->post('name');
+            $dataArr['title']               = "Lead from bastionex Site";
+            $dataArr['email']               = $this->input->post('email');
+           // $dataArr['website']           = 
+            $dataArr['phonenumber']         = $this->input->post('phone');
+            $dataArr['lead_value']          = 0;
+            $dataArr['company']             = $this->input->post('company');
+            $dataArr['address']             = null;
+            $dataArr['city']                = null;
+            $dataArr['state']               = null;
+            $dataArr['country']             = 0;
+            $dataArr['zip']                 = null;
+            $dataArr['default_language']    = 'english'; 
+            $dataArr['description']         = $this->input->post('message'); 
+         
+            $status     = $this->leads_model->addApiLead($dataArr);
+            if($status)
+            {
+                echo json_encode([
+                    'status'  => true,
+                    'message'  => "Success",
+                    'code'     => 1
+                ]);
+            }else{
+                echo json_encode([
+                    'success'  => false,
+                    'message'  => "Falied",
+                    'code'     => 0
+                ]);
+            }
+        }else{
+            echo json_encode([
+                'success'  => false,
+                'message'  => "Invalid Request",
+                'code'     => 0
+            ]);
+        }
+    }
+
+
+
+    /* Total Leads Summary */
+
+
+
+
+public function totalLeadsSummary() { 
+    header("Access-Control-Allow-Origin: *"); 
+    header("Access-Control-Allow-Methods: GET, POST, OPTIONS"); 
+    header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, token"); 
+ 
+    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { 
+        http_response_code(200); 
+        exit; 
+    } 
+        $json_data = file_get_contents('php://input'); 
+        $data = json_decode($json_data, true); 
+     
+        $start_date = isset($data['start_date']) ? $data['start_date'] : null; 
+        $end_date = isset($data['end_date']) ? $data['end_date'] : null; 
+     
+        if ($this->input->get_request_header('token', TRUE) === '7d68e2c38dfb38785e7a') { 
+            $sql = "SELECT  
+                COUNT(tblleads.id) AS total_leads, 
+                SUM(CASE WHEN tblleads.status = 4 THEN 1 ELSE 0 END) AS new_leads, 
+                SUM(CASE WHEN tblleads.status = 11 THEN 1 ELSE 0 END) AS whatsap_msg_Leads, 
+                SUM(CASE WHEN tblleads.status = 5 THEN 1 ELSE 0 END) AS answered_leads, 
+                SUM(CASE WHEN tblleads.status = 6 THEN 1 ELSE 0 END) AS call_leads, 
+                SUM(CASE WHEN tblleads.status = 10 THEN 1 ELSE 0 END) AS close_leads, 
+                SUM(CASE WHEN tblleads.status = 13 THEN 1 ELSE 0 END) AS cash_on_delivery_leads, 
+                SUM(CASE WHEN tblleads.status = 1 THEN 1 ELSE 0 END) AS customer_leads, 
+                SUM(CASE WHEN tblleads.status = 7 THEN 1 ELSE 0 END) AS failed_leads, 
+                SUM(CASE WHEN tblleads.status = 12 THEN 1 ELSE 0 END) AS follow_up_leads, 
+                SUM(CASE WHEN tblleads.status = 8 THEN 1 ELSE 0 END) AS intro_call_leads, 
+                SUM(CASE WHEN tblleads.status = 9 THEN 1 ELSE 0 END) AS prospect_leads, 
+                SUM(CASE WHEN tblleads.status = 3 THEN 1 ELSE 0 END) AS rejected_leads, 
+                SUM(CASE WHEN tblleads.card_ordered = 'Yes' THEN 1 ELSE 0 END) AS card_ordered, 
+                SUM(CASE WHEN tblleads.card_delivered = 'Yes' THEN 1 ELSE 0 END) AS card_delivered, 
+                SUM(CASE WHEN tblleads.source = 2 THEN tblleads.total_payment ELSE 0 END) AS online_revenue, 
+                SUM(CASE WHEN tblleads.source = 1 THEN tblleads.total_payment ELSE 0 END) AS offline_revenue, 
+                SUM(CASE WHEN tblleads.status = 1 THEN tblleads.total_payment ELSE 0 END) AS total_revenue 
+            FROM tblleads"; 
+     
+            if (isset($data['email']) && !empty($data['email'])) { 
+                $emails = explode(',', $data['email']);  
+                $emails = array_map(function($email) { 
+                    return "'" . $this->db->escape_str(trim($email)) . "'"; 
+                }, $emails); 
+                $sql .= " JOIN tblstaff ON tblleads.assigned = tblstaff.staffid"; 
+                if (count($emails) === 1) { 
+                    $sql .= " WHERE tblstaff.email = " . $emails[0]; 
+                } else { 
+                    $sql .= " WHERE tblstaff.email IN (" . implode(',', $emails) . ")"; 
+                } 
+            } else { 
+                $sql .= " WHERE tblleads.junk = 0"; 
+            } 
+     
+            if (!empty($start_date) && !empty($end_date)) { 
+                 
+                $sql .= " AND tblleads.dateadded BETWEEN '$start_date' AND '$end_date'"; 
+            } 
+     
+            $query = $this->db->query($sql); 
+            $result = $query->row_array(); 
+     
+            if (empty($result['total_leads']) || $result['total_leads'] < 1) { 
+                echo json_encode([ 
+                    'success' => false, 
+                    'message' => "No data found!", 
+                    'code'    => 0, 
+                ]); 
+            } else { 
+                echo json_encode([ 
+                    'success' => true, 
+                    'message' => "Data found successfully", 
+                    'data'    => $result 
+                ]); 
+            } 
+        } else { 
+            echo json_encode([ 
+                'success' => false, 
+                'message' => "Invalid Request", 
+                'code'    => 0 
+	    ]);
+	}
+  }
+
+
+
+
+
+
+   public function shrinkBusinessBayLead()
+{
+    header("Access-Control-Allow-Origin: *");
+    header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+    header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, token");
+
+    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        http_response_code(200);
+        exit;
+    }
+        $json_data = file_get_contents('php://input');
+        $data = json_decode($json_data, true);
+
+
+
+        if ($this->input->get_request_header('token', TRUE) === '7d68e2c38dfb38785e7a') {
+            $sql = "SELECT * FROM tblleads WHERE id =".$data['id'] ;
+            $query = $this->db->query($sql);
+            $result = $query->row_array();
+
+
+            $query = $this->db->query($sql);
+            $result = $query->row_array();
+
+            if (empty($result)) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => "No data found!",
+                    'code'    => 0,
+                ]);
+                return;
+            } else {
+                $arr = ['status' => 1];
+                $this->db->where('id', $result['id']);
+                $this->db->update('tblleads', $arr);
+                if ($this->db->affected_rows() > 0) {
+                    echo json_encode([
+                        'success' => true,
+                        'message' => "Update successful!",
+                    ]);
+                    return;
+                } else {
+                    echo json_encode([
+                        'success' => true,
+                        'message' => "Update failed or no changes were made.",
+                    ]);
+                    return;
+                }
+
+            }
+        } else {
+            echo json_encode([
+                'success' => false,
+                'message' => "Invalid Request",
+                'code'    => 0
+     ]);
+ }
+   }
+
+
+
+
+
+
+###########3
+
+    public function leadgGenerateByMeta()
+{
+    if ($this->input->post() && $this->input->post('token') == '7d68e2c38dfb38785e7a') 
+    {
+        $requiredFields = [
+            'name' => $this->input->post('name'),
+            'utm_source' => $this->input->post('utm_source'),
+            'utm_medium' => $this->input->post('utm_medium'),
+            'utm_campagin' => $this->input->post('utm_campagin'),
+            'email' => $this->input->post('email'),
+            'phone' => $this->input->post('phone')
+        ];
+
+        foreach ($requiredFields as $field => $value) {
+            if (empty($value)) {
+                echo json_encode([
+                    'status' => false,
+                    'message' => "Error: The field '$field' is required.",
+                    'code' => 0
+                ]);
+                return;
+            }
+        }
+
+        $email = $this->input->post('email');
+        $existingLead = $this->db->get_where('tblleads', ['email' => $email])->row();
+
+        if ($existingLead) {
+            echo json_encode([
+                'status' => false,
+                'message' => "Error: Duplicate email. The email '$email' is already in use.",
+                'code' => 0
+            ]);
+            return;
+        }
+
+        $dataSource = $this->db->get_where('tblleads_sources', ['name' => $this->input->post('utm_source')])->row();
+        $matched_value = $dataSource ? $dataSource->value : '';
+
+        $dataArr = [
+            'status' => 2,
+            'source' => 3,
+            'assigned' => 1,
+            'name' => $requiredFields['name'],
+            'utm_source' => $requiredFields['utm_source'],
+            'utm_medium' => $requiredFields['utm_medium'],
+            'utm_campagin' => $requiredFields['utm_campagin'],
+            'title' => "Lead from bastionex Site",
+            'email' => $requiredFields['email'],
+            'phonenumber' => $requiredFields['phone'],
+            'lead_value' => $matched_value,
+            'company' => $this->input->post('company'),
+            'address' => null,
+            'city' => null,
+            'state' => null,
+            'country' => 0,
+            'zip' => null,
+            'default_language' => 'english',
+            'description' => $this->input->post('message')
+        ];
+
+        $status = $this->leads_model->leadByMeta($dataArr);
+
+        echo json_encode([
+            'status' => $status ? true : false,
+            'message' => $status ? "Success" : "Failed",
+            'code' => $status ? 1 : 0
+        ]);
+    } else {
+        echo json_encode([
+            'success' => false,
+            'message' => "Invalid Request",
+            'code' => 0
+        ]);
+    }
+}
+
+
+
+
+
+    public function importVmycard()
+    {
+        if ($this->input->post() && $this->input->post('token') == '7d68e2c38dfb38785e7a') 
+        {
+            // if (isset($_FILES['file_csv']['name']) && $_FILES['file_csv']['name'] != '')
+            // {
+            //     //echo "yes";die;
+            //     $this->import->setSimulation($this->input->post('simulate'))
+            //                 ->setTemporaryFileLocation($_FILES['file_csv']['tmp_name'])
+            //                 ->setFilename($_FILES['file_csv']['name'])
+            //                 ->perform();
+            //     $data['total_rows_post'] = $this->import->totalRows();
+
+            // echo $data['total_rows_post'];die;
+                if (!$this->import->isSimulation()) {
+                    set_alert('success', _l('import_total_imported', $this->import->totalImported()));
+                }
+                $dataArr['name']                                = $this->input->post('name');
+                $dataArr['title']                               = null;
+                $dataArr['company']                             = $this->input->post('company');
+                $dataArr['country']                             = $this->input->post('country');
+                $dataArr['zip']                                 = $this->input->post('zip');
+                $dataArr['city']                                = $this->input->post('city');
+                $dataArr['state']                               = $this->input->post('state');
+                $dataArr['address']                             = $this->input->post('address');
+                $dataArr['email']                               = $this->input->post('email');
+                $dataArr['phonenumber']                         = $this->input->post('phonenumber');
+                $dataArr['website']                             = $this->input->post('website');
+                $dataArr['description']                         = $this->input->post('description');
+                $dataArr['leadorder']                           = 1;
+                $dataArr['assigned']                            = 1;
+                $dataArr['from_form_id']                        = 0;
+                $dataArr['status']                              = 3;
+                $dataArr['source']                              = 4;
+                $dataArr['lastcontact']                         = null;
+                $dataArr['dateassigned']                        = null;
+                $dataArr['last_status_change']                  = null;
+                $dataArr['addedfrom']                           = 1;
+                $dataArr['date_converted']                      = null;
+                $dataArr['lost']                                = 0;
+                $dataArr['junk']                                = 0;
+                $dataArr['last_lead_status']                    = 0;
+                $dataArr['is_imported_from_email_integration']  = null;
+                $dataArr['email_integration_uid']               = null;
+                $dataArr['is_public']                           = 0;
+                $dataArr['default_language']                    = null;
+                $dataArr['client_id']                           = 0;
+                $dataArr['lead_value']                          = $this->input->post('lead_value');
+
+            //}
+            $status     = $this->leads_model->addApiLead($dataArr);
+            if($status)
+            {
+                echo json_encode([
+                    'status'  => true,
+                    'message'  => "Success",
+                    'code'     => 1
+                ]);
+            }else{
+                echo json_encode([
+                    'success'  => false,
+                    'message'  => "Falied",
+                    'code'     => 0
+                ]);
+            }
+        }else{
+            echo json_encode([
+                'success'  => false,
+                'message'  => "Invalid Request",
+                'code'     => 0
+            ]);
+        }
+    }
+
+}

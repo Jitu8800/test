@@ -1,0 +1,224 @@
+== REQUEST_INFO | 2026-01-14 12:11:49 ==
+Array
+(
+    [method] => GET
+    [get_params] => Array
+        (
+            [hub_mode] => subscribe
+            [hub_verify_token] => 123456
+            [hub_challenge] => TEST123
+        )
+
+    [headers] => Array
+        (
+            [Cookie] => csrf_cookie_name=587f20b2358310e6faf6a15e1246b6f5; sp_session=2538mcti51amh7oi1dm9qnv1nvfjpkp0
+            [Connection] => close
+            [Accept-Encoding] => gzip, deflate, br
+            [Host] => localhost
+            [Postman-Token] => 4c182a1b-ccbf-4080-97ec-3e76adebb0e9
+            [Accept] => */*
+            [User-Agent] => PostmanRuntime/7.51.0
+        )
+
+    [raw_post] => 
+)
+
+--------------------------------------------------------------------------------
+
+== VERIFICATION_ATTEMPT | 2026-01-14 12:11:49 ==
+Array
+(
+    [hub_mode] => subscribe
+    [hub_verify_token] => 123456
+    [hub_challenge] => TEST123
+)
+
+--------------------------------------------------------------------------------
+
+== VERIFICATION_FAILED | 2026-01-14 12:11:49 ==
+Array
+(
+    [expected] => YOUR_VERIFY_TOKEN
+    [received] => 123456
+    [mode] => subscribe
+)
+
+--------------------------------------------------------------------------------
+
+== REQUEST_INFO | 2026-01-14 12:12:07 ==
+Array
+(
+    [method] => GET
+    [get_params] => Array
+        (
+            [hub_mode] => subscribe
+            [hub_verify_token] => 123456
+            [hub_challenge] => TEST123
+        )
+
+    [headers] => Array
+        (
+            [Cookie] => csrf_cookie_name=587f20b2358310e6faf6a15e1246b6f5; sp_session=1givkkre7bkg24vtt1dlckkj3h02f6pg
+            [Connection] => close
+            [Accept-Encoding] => gzip, deflate, br
+            [Host] => localhost
+            [Postman-Token] => 65e046d0-3b50-4039-9bc7-78cfb5806714
+            [Accept] => */*
+            [User-Agent] => PostmanRuntime/7.51.0
+        )
+
+    [raw_post] => 
+)
+
+--------------------------------------------------------------------------------
+
+== VERIFICATION_ATTEMPT | 2026-01-14 12:12:07 ==
+Array
+(
+    [hub_mode] => subscribe
+    [hub_verify_token] => 123456
+    [hub_challenge] => TEST123
+)
+
+--------------------------------------------------------------------------------
+
+== VERIFICATION_FAILED | 2026-01-14 12:12:07 ==
+Array
+(
+    [expected] => YOUR_VERIFY_TOKEN
+    [received] => 123456
+    [mode] => subscribe
+)
+
+--------------------------------------------------------------------------------
+
+== WEBHOOK_VERIFY_DEBUG | 2026-01-14 12:43:09 ==
+Array
+(
+    [mode] => 
+    [verify] => 
+    [expected_token] => 123456
+    [challenge] => 
+)
+
+
+== FIX_START | 2026-03-19 16:25:47 ==
+2026-03-19 16:25:47
+
+== UNIQUE_IDS | 2026-03-19 16:25:47 ==
+Array
+(
+    [0] => 120239417822370070
+    [1] => 120240683010750070
+    [2] => 120239427316710070
+    [3] => 120239431091220070
+    [4] => 120240655411400070
+    [5] => 120241669646130070
+    [6] => 120240934287510070
+    [7] => 120240939145410070
+    [8] => 120242454949480070
+    [9] => 120240936613750070
+)
+
+
+== LOCAL_TEST_MODE | 2026-03-19 16:25:47 ==
+Array
+(
+    [120240939145410070] => NFC Cards Campaign
+    [120240936613750070] => Real Estate Campaign
+    [120240939145410099] => Quick Reply Campaign
+)
+
+
+== CAMPAIGN_MAP | 2026-03-19 16:25:47 ==
+Array
+(
+    [120240939145410070] => NFC Cards Campaign
+    [120240936613750070] => Real Estate Campaign
+    [120240939145410099] => Quick Reply Campaign
+)
+
+
+== FIX_START | 2026-03-19 16:27:11 ==
+2026-03-19 16:27:11
+
+== UNIQUE_IDS | 2026-03-19 16:27:11 ==
+Array
+(
+    [0] => 120239417822370070
+    [1] => 120240683010750070
+    [2] => 120239427316710070
+    [3] => 120239431091220070
+    [4] => 120240655411400070
+    [5] => 120241669646130070
+    [6] => 120240934287510070
+    [7] => 120240939145410070
+    [8] => 120242454949480070
+    [9] => 120240936613750070
+)
+
+
+== LOCAL_TEST_MODE | 2026-03-19 16:27:11 ==
+Array
+(
+    [120240939145410070] => NFC Cards Campaign
+    [120240936613750070] => Real Estate Campaign
+    [120240939145410099] => Quick Reply Campaign
+)
+
+
+== CAMPAIGN_MAP | 2026-03-19 16:27:11 ==
+Array
+(
+    [120240939145410070] => NFC Cards Campaign
+    [120240936613750070] => Real Estate Campaign
+    [120240939145410099] => Quick Reply Campaign
+)
+
+
+== SOURCE_CREATED | 2026-03-19 16:27:11 ==
+Array
+(
+    [id] => 8
+    [name] => NFC Cards Campaign
+    [campaign_id] => 120240939145410070
+)
+
+
+== SOURCE_CREATED | 2026-03-19 16:27:11 ==
+Array
+(
+    [id] => 9
+    [name] => Real Estate Campaign
+    [campaign_id] => 120240936613750070
+)
+
+
+== SOURCE_CREATED | 2026-03-19 16:27:11 ==
+Array
+(
+    [id] => 10
+    [name] => Quick Reply Campaign
+    [campaign_id] => 120240939145410099
+)
+
+
+== FIX_DONE | 2026-03-19 16:27:11 ==
+Array
+(
+    [success] => 1
+    [mode] => LOCAL TEST
+    [total_leads] => 1438
+    [unique_campaigns] => 10
+    [updated] => 5
+    [skipped] => 1433
+    [campaign_map] => Array
+        (
+            [120240939145410070] => NFC Cards Campaign
+            [120240936613750070] => Real Estate Campaign
+            [120240939145410099] => Quick Reply Campaign
+        )
+
+)
+
+
